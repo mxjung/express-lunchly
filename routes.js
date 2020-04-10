@@ -21,9 +21,12 @@ router.get("/", async function(req, res, next) {
 /** Homepage: show list of customers that were searched. */
 
 router.post("/", async function(req, res, next) {
-  // make sure to lowercase
+  
+  let name = req.body.name;
+  [firstName, lastName] = name.split(' ');
+  
   try {
-    const customers = await Customer.all();
+    const customers = await Customer.filterByName(firstName, lastName);
     return res.render("customer_list.html", { customers });
   } catch (err) {
     return next(err);

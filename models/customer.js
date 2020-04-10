@@ -55,26 +55,45 @@ class Customer {
 
   /** return filtered customers by name. */
 
-  static async filterByName(firstName, lastName) {
-    const results = await db.query(
-      `SELECT id, 
-         first_name AS "firstName",  
-         last_name AS "lastName", 
-         phone, 
-         notes 
-        FROM customers WHERE first_name like %$1%`,
-      [firstName]
-    );
+  static async filterByName(term1, term2) {
 
-    const customer = results.rows[0];
+    let results;
+    if (term1 && term2) {
+      results = await db.query(
+        `SELECT id, 
+           first_name AS "firstName",  
+           last_name AS "lastName", 
+           phone, 
+           notes 
+          FROM customers 
+            WHERE lower(first_name) like $1 
+            AND lower(last_name) like $2`,
+        [`%${term1.toLowerCase()}%`, `%${term2.toLowerCase()}%`]
+      );
+    } else {
+      results = await db.query(
+        `SELECT id, 
+           first_name AS "firstName",  
+           last_name AS "lastName", 
+           phone, 
+           notes 
+          FROM customers 
+            WHERE lower(first_name) like $1 
+            OR lower(last_name) like $1`,
+        [`%${term1.toLowerCase()}%`]
+      );
+    }
 
-    if (customer === undefined) {
-      const err = new Error(`No such customer: ${id}`);
+    const customers = results.rows;
+
+    if (customers === undefined) {
+      const err = new Error(`No such customer`);
       err.status = 404;
       throw err;
     }
 
-    return new Customer(customer);
+    // return new Customer(customers);
+    return results.rows.map(c => new Customer(c));
   }
 
   /** get all reservations for this customer. */
