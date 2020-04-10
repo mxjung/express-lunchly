@@ -58,6 +58,15 @@ class Reservation {
       );
     }
   }
+
+  getRelativeStartAt() {
+    console.log("this.getformattedStartAt() is", this.getformattedStartAt())
+    let date =  moment(this.getformattedStartAt(), "MMMM Do YYYY, h:mm:ss a").fromNow();
+    console.log("THE DATE IS", date)
+    return date;
+  }
+
+
 }
 
 

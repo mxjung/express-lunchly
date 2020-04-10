@@ -6,12 +6,13 @@ const Reservation = require("./reservation");
 /** Customer of the restaurant. */
 
 class Customer {
-  constructor({ id, firstName, lastName, phone, notes }) {
+  constructor({ id, firstName, lastName, phone, notes, reservations }) {
     this.id = id;
     this.firstName = firstName;
     this.lastName = lastName;
     this.phone = phone;
     this.notes = notes;
+    this.reservations = reservations;
   }
 
   /** find all customers. */
@@ -87,7 +88,35 @@ class Customer {
     const customers = results.rows;
 
     if (customers === undefined) {
-      const err = new Error(`No such customer`);
+      const err = new Error(`No customer has made a reservation`);
+      err.status = 404;
+      throw err;
+    }
+
+    // return new Customer(customers);
+    return results.rows.map(c => new Customer(c));
+  }
+
+  static async filterBest() {
+    const results = await db.query(
+        `SELECT c.id, 
+           first_name AS "firstName",  
+           last_name AS "lastName", 
+           phone, 
+           c.notes,
+           COUNT(customer_id) as "reservations"
+          FROM customers AS c
+          JOIN reservations AS r
+          ON c.id = r.customer_id 
+            GROUP BY c.id
+            ORDER BY COUNT(customer_id) DESC
+            LIMIT 10`);
+
+    const customers = results.rows;
+    console.log("The best customers array is", customers);
+
+    if (customers === undefined) {
+      const err = new Error(`No customer has made a reservation`);
       err.status = 404;
       throw err;
     }
@@ -127,6 +156,14 @@ class Customer {
   fullName() {
     return `${this.firstName} ${this.lastName}`;
   }
+
+  /** get number of reservations. */
+
+  async numReservations() {
+    const reservations = await this.getReservations();
+    return reservations.length;
+  }
+
 }
 
 module.exports = Customer;
